@@ -1,0 +1,44 @@
+name: Deploy Boletas API
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build & Publish
+        run: |
+          dotnet publish -c Release -o publish
+
+      - name: Stop service
+        run: sudo systemctl stop boletas-api || true
+
+      - name: Deploy files
+        run: |
+          sudo rm -rf /var/www/boletas-api/*
+          sudo cp -r publish/* /var/www/boletas-api/
+          sudo chown -R deploy:deploy /var/www/boletas-api
+
+      - name: Start service
+        run: sudo systemctl start boletas-api
+
+      - name: Verify
+        run: |
+          sleep 5
+          systemctl status boletas-api --no-pager
