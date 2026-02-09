@@ -1,4 +1,4 @@
-name: Deploy Boletas API
+name: Deploy boletas Backend
 
 on:
   push:
@@ -11,34 +11,21 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore
-        run: dotnet restore
-
-      - name: Build & Publish
+      - name: Build & Publish Backend
         run: |
+          dotnet restore
           dotnet publish -c Release -o publish
-
-      - name: Stop service
-        run: sudo systemctl stop boletas-api || true
 
       - name: Deploy files
         run: |
+          sudo systemctl stop boletas-api || true
           sudo rm -rf /var/www/boletas-api/*
           sudo cp -r publish/* /var/www/boletas-api/
           sudo chown -R deploy:deploy /var/www/boletas-api
+          sudo systemctl start boletas-api
 
-      - name: Start service
-        run: sudo systemctl start boletas-api
-
-      - name: Verify
+      - name: Reload nginx
         run: |
-          sleep 5
-          systemctl status boletas-api --no-pager
+          sudo systemctl reload nginx
