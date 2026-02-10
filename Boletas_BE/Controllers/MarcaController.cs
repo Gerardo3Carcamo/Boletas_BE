@@ -24,7 +24,11 @@ namespace Boletas_BE.Controllers
                 {
                     data = await _context
                         .Marcas
-                        .ToListAsync(),
+                        .Select(x => new
+                        {
+                            x.Id,
+                            x.Nombre
+                        }).ToListAsync(),
                     message = "",
                     status = true
             });
